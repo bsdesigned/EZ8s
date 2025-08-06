@@ -27,6 +27,7 @@ Constraints:
 - Use classes like: p-1, m-1, small, btn-sm, badge, list-group-item-sm
 - Keep text concise and minimal
 - Return ONLY the HTML code without explanations
+- Do not wrap in markdown code blocks or \`\`\`html tags
 
 Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, compact alerts.`
           }]

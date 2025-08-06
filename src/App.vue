@@ -28,11 +28,20 @@
           style="height: 50%;"
         >
           <div 
-            class="card h-100" 
+            class="card h-100 position-relative" 
             :class="{ 'border-primary': selectedSection === index, 'border-warning border-3': isFlashing }"
             @click="selectSection(index)"
             style="cursor: pointer; min-height: 200px; max-height: 300px;"
           >
+            <button 
+              v-if="section.history.length > 0"
+              @click.stop="goBackSection(index)"
+              class="btn btn-sm btn-outline-secondary position-absolute"
+              style="top: 5px; right: 5px; z-index: 10; padding: 2px 6px;"
+              title="Go back to previous version"
+            >
+              ←
+            </button>
             <div class="card-body p-2 overflow-auto" style="font-size: 0.85rem;">
               <div class="text-center text-muted" v-if="!section.content">
                 Section {{ index + 1 }}
@@ -78,7 +87,7 @@ export default {
   data() {
     return {
       activity: 'My Activity',
-      sections: Array(8).fill(null).map(() => ({ content: '' })),
+      sections: Array(8).fill(null).map(() => ({ content: '', prompt: '', history: [] })),
       selectedSection: null,
       prompt: '',
       timeLeft: 480,
@@ -97,6 +106,7 @@ export default {
     },
     selectSection(index) {
       this.selectedSection = index
+      this.prompt = this.sections[index].prompt || ''
     },
     async generateContent() {
       if (this.selectedSection === null || !this.prompt.trim()) return
@@ -104,6 +114,20 @@ export default {
       this.isGenerating = true
       
       try {
+        const section = this.sections[this.selectedSection]
+        
+        // Save current content to history before generating new content
+        if (section.content) {
+          section.history.unshift({ content: section.content, prompt: section.prompt })
+          // Keep only last 3 versions
+          if (section.history.length > 3) {
+            section.history = section.history.slice(0, 3)
+          }
+        }
+        
+        // Save current prompt
+        section.prompt = this.prompt
+        
         // Check if running locally (development)
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         
@@ -126,6 +150,7 @@ Constraints:
 - Use classes like: p-1, m-1, small, btn-sm, badge, list-group-item-sm
 - Keep text concise and minimal
 - Return ONLY the HTML code without explanations
+- Do not wrap in markdown code blocks or \`\`\`html tags
 
 Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, compact alerts.`
                 }]
@@ -142,7 +167,8 @@ Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, 
           }
           
           const data = await response.json()
-          this.sections[this.selectedSection].content = data.candidates?.[0]?.content?.parts?.[0]?.text || `<div class="alert alert-info">${this.prompt}</div>`
+          const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || `<div class="alert alert-info">${this.prompt}</div>`
+          section.content = this.cleanHtmlResponse(rawContent)
         } else {
           // Use Vercel API route for production
           const response = await fetch('/api/generate', {
@@ -160,16 +186,42 @@ Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, 
           }
           
           const data = await response.json()
-          this.sections[this.selectedSection].content = data.content
+          section.content = this.cleanHtmlResponse(data.content)
         }
-        
-        this.prompt = ''
+
       } catch (error) {
         console.error('Generation failed:', error)
         alert('Failed to generate content. Please try again.')
       } finally {
         this.isGenerating = false
       }
+    },
+    goBackSection(sectionIndex) {
+      const section = this.sections[sectionIndex]
+      if (section.history.length === 0) return
+      
+      const previousVersion = section.history.shift()
+      
+      // Save current version to history
+      section.history.unshift({ content: section.content, prompt: section.prompt })
+      
+      // Restore previous version
+      section.content = previousVersion.content
+      section.prompt = previousVersion.prompt
+      
+      // Update prompt input if this section is currently selected
+      if (this.selectedSection === sectionIndex) {
+        this.prompt = previousVersion.prompt
+      }
+    },
+    cleanHtmlResponse(text) {
+      if (!text) return text
+      // Remove markdown code block formatting
+      return text
+        .replace(/^```html\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim()
     },
     saveApiKey() {
       localStorage.setItem('hfApiKey', this.apiKey)

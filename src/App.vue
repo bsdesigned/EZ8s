@@ -101,31 +101,62 @@ export default {
     async generateContent() {
       if (this.selectedSection === null || !this.prompt.trim()) return
       
-
-      
       this.isGenerating = true
       
       try {
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            prompt: this.prompt
-          })
-        })
+        // Check if running locally (development)
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         
-        if (!response.ok) {
-          throw new Error(`API Error: ${response.status}`)
+        if (isLocal) {
+          // Direct Gemini API call for local development
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyCNUokwcdh1UrXRKwpc3KavhimIMcK5zsk`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Create clean HTML content using Bootstrap 5 classes for: "${this.prompt}". Return ONLY the HTML code without explanations or markdown. Use appropriate Bootstrap components like cards, buttons, lists, badges, alerts, etc. Make it visually appealing and responsive.`
+                }]
+              }],
+              generationConfig: {
+                maxOutputTokens: 1000,
+                temperature: 0.7
+              }
+            })
+          })
+          
+          if (!response.ok) {
+            throw new Error(`Gemini API Error: ${response.status}`)
+          }
+          
+          const data = await response.json()
+          this.sections[this.selectedSection].content = data.candidates?.[0]?.content?.parts?.[0]?.text || `<div class="alert alert-info">${this.prompt}</div>`
+        } else {
+          // Use Vercel API route for production
+          const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              prompt: this.prompt
+            })
+          })
+          
+          if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`)
+          }
+          
+          const data = await response.json()
+          this.sections[this.selectedSection].content = data.content
         }
         
-        const data = await response.json()
-        this.sections[this.selectedSection].content = data.content
         this.prompt = ''
       } catch (error) {
         console.error('Generation failed:', error)
-        alert('Failed to generate content. Please check your API key and try again.')
+        alert('Failed to generate content. Please try again.')
       } finally {
         this.isGenerating = false
       }

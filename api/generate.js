@@ -18,7 +18,17 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Create clean HTML content using Bootstrap 5 classes for: "${prompt}". Return ONLY the HTML code without explanations or markdown. Use appropriate Bootstrap components like cards, buttons, lists, badges, alerts, etc. Make it visually appealing and responsive.`
+            text: `Create compact HTML content using Bootstrap 5 classes for: "${prompt}". 
+
+Constraints:
+- Content must fit in a small card (200-300px height)
+- Use small Bootstrap components (btn-sm, small text, compact spacing)
+- Maximum 3-5 elements total
+- Use classes like: p-1, m-1, small, btn-sm, badge, list-group-item-sm
+- Keep text concise and minimal
+- Return ONLY the HTML code without explanations
+
+Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, compact alerts.`
           }]
         }],
         generationConfig: {

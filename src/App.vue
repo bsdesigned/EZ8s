@@ -31,9 +31,9 @@
             class="card h-100" 
             :class="{ 'border-primary': selectedSection === index, 'border-warning border-3': isFlashing }"
             @click="selectSection(index)"
-            style="cursor: pointer;"
+            style="cursor: pointer; min-height: 200px; max-height: 300px;"
           >
-            <div class="card-body d-flex align-items-center justify-content-center">
+            <div class="card-body p-2 overflow-auto" style="font-size: 0.85rem;">
               <div class="text-center text-muted" v-if="!section.content">
                 Section {{ index + 1 }}
               </div>
@@ -117,7 +117,17 @@ export default {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `Create clean HTML content using Bootstrap 5 classes for: "${this.prompt}". Return ONLY the HTML code without explanations or markdown. Use appropriate Bootstrap components like cards, buttons, lists, badges, alerts, etc. Make it visually appealing and responsive.`
+                  text: `Create compact HTML content using Bootstrap 5 classes for: "${this.prompt}". 
+
+Constraints:
+- Content must fit in a small card (200-300px height)
+- Use small Bootstrap components (btn-sm, small text, compact spacing)
+- Maximum 3-5 elements total
+- Use classes like: p-1, m-1, small, btn-sm, badge, list-group-item-sm
+- Keep text concise and minimal
+- Return ONLY the HTML code without explanations
+
+Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, compact alerts.`
                 }]
               }],
               generationConfig: {

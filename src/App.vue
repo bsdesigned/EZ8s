@@ -63,9 +63,9 @@
               v-model="prompt" 
               type="text" 
               class="form-control" 
-              placeholder="Describe what you want to create..."
+              :placeholder="selectedSection === null ? 'Select a section to get started' : 'Describe what you want to create...'"
               @keyup.enter="generateContent"
-              :disabled="isGenerating"
+              :disabled="isGenerating || selectedSection === null"
             >
             <button 
               @click="generateContent" 
@@ -128,69 +128,23 @@ export default {
         // Save current prompt
         section.prompt = this.prompt
         
-        // Check if running locally (development)
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        // Use Vercel API route for all environments
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: this.prompt
+          })
+        })
         
-        if (isLocal) {
-          // Direct Gemini API call for local development
-          const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': 'AIzaSyCNUokwcdh1UrXRKwpc3KavhimIMcK5zsk'
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: `Create compact HTML content using Bootstrap 5 classes for: "${this.prompt}". 
-
-Constraints:
-- Content must fit in a small card (200-300px height)
-- Use small Bootstrap components (btn-sm, small text, compact spacing)
-- Maximum 3-5 elements total
-- Use classes like: p-1, m-1, small, btn-sm, badge, list-group-item-sm
-- Keep text concise and minimal
-- Return ONLY the HTML code without explanations
-- Do not wrap in markdown code blocks or \`\`\`html tags
-
-Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, compact alerts.`
-                }]
-              }],
-              generationConfig: {
-                maxOutputTokens: 1000,
-                temperature: 0.7
-              }
-            })
-          })
-          
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('API Response:', errorText)
-            throw new Error(`Gemini API Error: ${response.status} - ${errorText}`)
-          }
-          
-          const data = await response.json()
-          const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || `<div class="alert alert-info">${this.prompt}</div>`
-          section.content = this.cleanHtmlResponse(rawContent)
-        } else {
-          // Use Vercel API route for production
-          const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              prompt: this.prompt
-            })
-          })
-          
-          if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`)
-          }
-          
-          const data = await response.json()
-          section.content = this.cleanHtmlResponse(data.content)
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`)
         }
+        
+        const data = await response.json()
+        section.content = this.cleanHtmlResponse(data.content)
 
       } catch (error) {
         console.error('Generation failed:', error)

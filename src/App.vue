@@ -133,7 +133,7 @@ export default {
         
         if (isLocal) {
           // Direct Gemini API call for local development
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyCNUokwcdh1UrXRKwpc3KavhimIMcK5zsk`, {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyCJ5MjdGcW3cJQUf1Pk0G78ZxGpAg2K8go`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

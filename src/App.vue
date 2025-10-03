@@ -133,10 +133,11 @@ export default {
         
         if (isLocal) {
           // Direct Gemini API call for local development
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyCJ5MjdGcW3cJQUf1Pk0G78ZxGpAg2K8go`, {
+          const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'x-goog-api-key': 'AIzaSyCNUokwcdh1UrXRKwpc3KavhimIMcK5zsk'
             },
             body: JSON.stringify({
               contents: [{
@@ -163,7 +164,9 @@ Example good sizes: small buttons, badges, short lists (2-3 items), mini forms, 
           })
           
           if (!response.ok) {
-            throw new Error(`Gemini API Error: ${response.status}`)
+            const errorText = await response.text()
+            console.error('API Response:', errorText)
+            throw new Error(`Gemini API Error: ${response.status} - ${errorText}`)
           }
           
           const data = await response.json()
